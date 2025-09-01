@@ -231,8 +231,8 @@ localparam [7:0] Colon[0:7] = '{
       8'b11111111
   };
   
-  reg  [8:0] state = 9'b0000000111;
-  reg  [8:0] placed = 9'b000000111;
+  reg  [8:0] state = 9'b0000000000;
+  reg  [8:0] placed = 9'b000000000;
   reg [8:0] selected = 9'b00000001; 
   wire [8:0] sel_active;
   wire [11:0] btn_in = {
@@ -257,7 +257,7 @@ endgenerate
   assign turn_u = glyph_active(60, 455, U, 3);
   assign turn_r = glyph_active(90, 455, R_letter, 3);
 
-
+assign win = check_for_win(placed,state);
 parameter circle_win_x = 160;
 parameter circle_win_y = 220;
 parameter text_size = 6;
@@ -279,6 +279,7 @@ wire [10:0] Circle_spelling = {circle_wins_excl, circle_wins_s, circle_wins_n, c
 
 parameter cross_win_x = 200;
 parameter cross_win_y = 2000;
+
 wire cross_wins_c = glyph_active(cross_win_x + 0*30, cross_win_y, C, 3);
 wire cross_wins_r = glyph_active(cross_win_x + 1*30, cross_win_y, R_letter, 3);
 wire cross_wins_o = glyph_active(cross_win_x + 2*30, cross_win_y, Circle, 3);  // Using
@@ -333,7 +334,7 @@ genvar a;
     assign sel_active[a] = glyph_on;  
   end
 endgenerate
-assign win = check_for_win(placed,state);
+
 always @(posedge clk) begin
   R <= 2'b00;
   G <= 2'b00;
@@ -406,18 +407,21 @@ always @(posedge clk) begin
       end
     if (win[0]) begin
     if (win[1]) begin
-      {R, G, B} <= 6'b0000000;
+      
       if (|Circle_spelling) begin
-        {R, G, B} <= 6'b111111;
+      G <= 6'b111111;
       end
       
     end else begin
     {R, G, B} <= 6'b0000000;
         if (|Cross_spelling) begin
-        {R, G, B} <= 6'b111111;
+        G <= 6'b111111;
       end
     end
-   end
+    end else if (state == {9{1'b1}}) begin
+      {R, G, B} <= 6'b0000000; 
+      end
+
 last_btn <= btn_in;
   end
 end
