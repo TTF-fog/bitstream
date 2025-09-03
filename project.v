@@ -231,7 +231,7 @@ localparam [7:0] Colon[0:7] = '{
       8'b11111111
   };
   
-  reg  [8:0] state = 9'b0000000111;
+  reg  [8:0] state = 9'b00000000;
   reg  [8:0] placed = 9'b000000000;
   reg [8:0] selected = 9'b00000001; 
   wire [8:0] sel_active;
@@ -253,97 +253,88 @@ endgenerate
   reg turn = 1'b0;
   
   wire turn_t, turn_u, turn_r, turn_n, turn_colon, current_item;
-  assign turn_t = glyph_active(30, 455, T, 3);
+  reg [9:0] t_x = 30;
+  reg[9:0] t_y = 455;
+  assign turn_t = glyph_active(t_x, t_y, T, 3);
   assign turn_u = glyph_active(60, 455, U, 3);
-  assign turn_r = glyph_active(90, 455, R_letter, 3);
+  reg [9:0] r_x = 90;
+  reg [9:0] r_y = 455;
+  assign turn_r = glyph_active(r_x, r_y, R_letter, 3);
 
 assign win = check_for_win(placed,state);
 parameter circle_win_x = 160;
 parameter circle_win_y = 220;
-parameter text_size = 6;
+reg [9:0] i_x = 190;
+reg [9:0] i_y = 220;
+reg [9:0] e_x = 310;
+reg [9:0] e_y = 220;
 wire circle_wins_c = glyph_active(circle_win_x + 0*30, circle_win_y, C, 3);
-wire circle_wins_i1 = glyph_active(circle_win_x + 1*30, circle_win_y, I, 3);
-wire circle_wins_r = glyph_active(circle_win_x + 2*30, circle_win_y, R_letter, 3);
+wire circle_wins_i1 = glyph_active(i_x, i_y, I, 3);
 wire circle_wins_c2 = glyph_active(circle_win_x + 3*30, circle_win_y, C, 3);
 wire circle_wins_l = glyph_active(circle_win_x + 4*30, circle_win_y, L, 3);
-wire circle_wins_e = glyph_active(circle_win_x + 5*30, circle_win_y, E, 3);
+wire circle_wins_e = glyph_active(e_x , e_y, E, 3);
 wire circle_wins_w = glyph_active(circle_win_x + 7*30, circle_win_y, W, 3);
 wire circle_wins_i2 = glyph_active(circle_win_x + 8*30, circle_win_y, I, 3);
-wire circle_wins_n = glyph_active(circle_win_x + 9*30, circle_win_y, N, 3);
 wire circle_wins_s = glyph_active(circle_win_x + 10*30, circle_win_y, S, 3);
 wire circle_wins_excl = glyph_active(circle_win_x + 11*30, circle_win_y, Exclamation, 3);
 reg [5:0] turn_color = 6'b111111;
-wire [10:0] Circle_spelling = {circle_wins_excl, circle_wins_s, circle_wins_n, circle_wins_i2, circle_wins_w, 
-                              circle_wins_e, circle_wins_l, circle_wins_c2, circle_wins_r, circle_wins_i1, circle_wins_c};
+wire [10:0] Circle_spelling = {circle_wins_excl, circle_wins_s, circle_wins_i2, circle_wins_w, 
+                              circle_wins_e, circle_wins_l, circle_wins_c2, circle_wins_i1, circle_wins_c};
 
 
 reg [7:0] cross_win_x = 8'd160;
 parameter cross_win_y = 220;
-
-wire cross_wins_c = glyph_active(cross_win_x + 0*30, cross_win_y, C, 3);
 wire cross_wins_r = glyph_active(cross_win_x + 1*30, cross_win_y, R_letter, 3);
 wire cross_wins_o = glyph_active(cross_win_x + 2*30, cross_win_y, Circle, 3);  // Using
 wire cross_wins_s1 = glyph_active(cross_win_x + 3*30, cross_win_y, S, 3);
 wire cross_wins_s2 = glyph_active(cross_win_x + 4*30, cross_win_y, S, 3);
-wire cross_wins_w = glyph_active(cross_win_x + 6*30, cross_win_y, W, 3);
-wire cross_wins_i = glyph_active(cross_win_x + 7*30, cross_win_y, I, 3);
-
-wire cross_wins_s3 = glyph_active(cross_win_x + 9*30, cross_win_y, S, 3);
-wire cross_wins_excl = glyph_active(cross_win_x + 10*30, cross_win_y, Exclamation, 3);
-wire [10:0] Cross_spelling = {cross_wins_excl, circle_wins_n , circle_wins_i1, circle_wins_w,
-                             cross_wins_s2, cross_wins_s1, cross_wins_o, cross_wins_r, cross_wins_c};
+wire [10:0] Cross_spelling = {circle_wins_excl, circle_wins_s , circle_wins_i2, circle_wins_w, cross_wins_s2, cross_wins_s1, cross_wins_o, cross_wins_r, circle_wins_c};
   reg [9:0] n_x = 10'd120;
   reg [9:0] n_y = 10'd455;
   assign turn_n = glyph_active(n_x, n_y, N, 3);
   assign turn_colon = glyph_active(150, 455, Colon, 3);
   assign current_item = glyph_active(180, 455, turn ? Circle : Cross, 3);
-  wire [8:0] cell_active;
-  localparam CELL_SIZE = 80;   
+  wire [8:0] cell_active; 
   localparam CELL_SPACING = 250; 
   localparam CELL_SPACING_Y = 180; 
   localparam GRID_ORIGIN_X = 30;
   localparam GRID_ORIGIN_Y = 30;
   wire [3:0] sel_index = high_index(selected);
-  
-  genvar i;
-  generate
+wire [8:0] cell_glyph_on;
+genvar i;
+generate
   for (i=0; i<9; i=i+1) begin : CELL_DRAW
     localparam integer row = i / 3;
     localparam integer col = i % 3;
-    wire glyph_on;
-    assign glyph_on = glyph_active(
+    
+    // Only call glyph_active if cell is occupied
+    assign cell_glyph_on[i] = state[i] ? glyph_active(
         GRID_ORIGIN_X + col*CELL_SPACING,
         GRID_ORIGIN_Y + row*CELL_SPACING_Y,
-        state[i] ? (placed[i] ? Circle : Cross) : Blank, 10
-    );
-    assign cell_active[i] = glyph_on;
+        placed[i] ? Circle : Cross, 10
+    ) : 1'b0;
   end
 endgenerate
 
-genvar a;
-  generate
-  for (a=0; a<9; a=a+1) begin : SEL_DRAW
-    localparam integer row = a / 3;
-    localparam integer col = a % 3;
-    wire glyph_on;
-    assign glyph_on = glyph_active(
-        GRID_ORIGIN_X + col*CELL_SPACING - 20,
-        GRID_ORIGIN_Y + row*CELL_SPACING_Y - 20,
-        selected[a] ? Sel : Blank, 15
-    );
-    assign sel_active[a] = glyph_on;  
-  end
-endgenerate
+assign cell_active = cell_glyph_on;
+
+wire sel_glyph_on;
+assign sel_glyph_on = (|selected) ? glyph_active(
+    GRID_ORIGIN_X + (sel_index % 3) * CELL_SPACING - 20,
+    GRID_ORIGIN_Y + (sel_index / 3) * CELL_SPACING_Y - 20,
+    Sel, 15
+) : 1'b0;
+assign sel_active = {9{sel_glyph_on}} & selected;
 
 always @(posedge clk) begin
   R <= 2'b00;
   G <= 2'b00;
-  B <= 2'b00;
+  B <= 2'b01;
 
   if (video_active) begin
-    R <= 2'b11;
+    R <= 2'b00;
     G <= 2'b00;
-    B <= 2'b00;
+    B <= 2'b01;
    
    if (|cell_active) begin
         {R,G,B} <= 6'b111111;
@@ -355,8 +346,8 @@ always @(posedge clk) begin
          (pix_y >= (479-340) && pix_y <= (479-330)) ) 
     begin
       R <= 2'b00;
-      G <= 2'b00;
-      B <= 2'b11; 
+      G <= 2'b01;
+      B <= 2'b00; 
     end
     /*
     7 = uparrow
@@ -394,7 +385,18 @@ always @(posedge clk) begin
         end
       
       
-     
+       turn_color <= 6'b111111;
+       n_x <= 10'd120;
+       r_x <= 10'd90;
+       r_y <= 10'd455;
+       n_y <= 10'd455;
+       t_x <= 30;
+       t_y <= 455;
+       //out of sight out of mind
+       i_x <= 1900;
+       i_y <= 2200;
+    e_x <= 31009; 
+ e_y <= 22000;
       if (btn_pressed[9]) begin //Select
       
         if (!state[sel_index]) begin
@@ -404,27 +406,48 @@ always @(posedge clk) begin
         end
       end
     if (win[0]) begin
-        {R,G,B} <= 6'b0;
+      i_x <= 190;
+       i_y <= 220;
+        r_x <= 220;
+        r_y <= 220;
+       e_x <= 310;
+     e_y <= 220;
+        {R,G,B} <= 6'b1;
         turn_color <= 6'b001100;
         n_y <= 220; //it's a rendering priority issue
-        n_x <= 400;
+        n_x <= 430;
         
     if (win[1]) begin
       if (|Circle_spelling) begin
+        
       G <= 6'b111111;
       end
     end else begin
        
       if (|Cross_spelling) begin
-       
-        G <= 6'b111111;
+         i_x <= 900;
+       i_y <= 900;
+        r_x <= 900;
+        r_y <=900;
+       e_x <= 900;
+     e_y <= 900;
+       G <= 6'b111111;
       end
     end
-    if (turn_t || turn_u || turn_r || turn_n || turn_colon || current_item) begin
+  
+    end else if (state == {9{1'b1}}) begin //everything is placed, but weesa nosa have a winsa
+        i_x <= 260;
+        i_y <= 220;
+        t_x <= 220;
+        t_y <= 220;
+         e_x <= 300;
+         e_y <= 220;
+        {R,G,B} <= 6'b000001;
+        turn_color <= 6'b110000;
+      end
+     if (turn_t || turn_u || turn_r || turn_n || turn_colon || current_item || circle_wins_i1 || circle_wins_e) begin
       {R, G, B} <= turn_color;
     end
-
-    end 
 
 last_btn <= btn_in;
   end
@@ -446,25 +469,61 @@ function [1:0] check_for_win;
     input [8:0] placed;
     input [8:0] state;
     begin
+
        reg win_top_horizontal = 1'b0;
        reg win_mid_horizontal = 1'b0;
        reg win_low_horizontal = 1'b0;
+       reg win_left_vertical = 1'b0;
+       reg win_mid_vertical = 1'b0;
+       reg win_right_vertical = 1'b0;
+       
+       reg win_main_diagonal = 1'b0;
+       reg win_anti_diagonal = 1'b0;
+       //absolute dumpsture fire but thhis was the best thing i could think off
        reg sign = 1'b0;
-      
-      
+       reg any_win = 1'b0;
       if (state[0] && state[1] && state[2]) begin
         win_top_horizontal = (placed[0] == placed[1]) && (placed[0] == placed[2]);
-        sign = win_top_horizontal ? placed[0]: 1'b0;
       end
       if (state[3] && state[4] && state[5]) begin
-      win_mid_horizontal = (placed[3] == placed[4]) && (placed[4] == placed[5]);
-      sign = win_mid_horizontal ? placed[3] : 1'b0;
+        win_mid_horizontal = (placed[3] == placed[4]) && (placed[4] == placed[5]);
       end
       if (state[6] && state[7] && state[8]) begin
-      win_mid_horizontal = (placed[6] == placed[7]) && (placed[7] == placed[8]);
-      sign = win_low_horizontal ? placed[6] : 1'b0;
+        win_low_horizontal = (placed[6] == placed[7]) && (placed[7] == placed[8]);
       end
-      check_for_win = {sign,win_top_horizontal | win_mid_horizontal | win_low_horizontal};
+
+      if (state[0] && state[3] && state[6]) begin
+        win_left_vertical = (placed[0] == placed[3]) && (placed[0] == placed[6]);
+      end
+      if (state[1] && state[4] && state[7]) begin
+        win_mid_vertical = (placed[1] == placed[4]) && (placed[1] == placed[7]);
+      end
+      if (state[2] && state[5] && state[8]) begin
+        win_right_vertical = (placed[2] == placed[5]) && (placed[2] == placed[8]);
+      end
+    
+      if (state[0] && state[4] && state[8]) begin
+        win_main_diagonal = (placed[0] == placed[4]) && (placed[0] == placed[8]);
+      end
+      if (state[2] && state[4] && state[6]) begin
+        win_anti_diagonal = (placed[2] == placed[4]) && (placed[2] == placed[6]);
+      end
+    
+      any_win = win_top_horizontal | win_mid_horizontal | win_low_horizontal |
+                win_left_vertical | win_mid_vertical | win_right_vertical |
+                win_main_diagonal | win_anti_diagonal;
+    
+      if (win_top_horizontal) sign = placed[0];
+      else if (win_mid_horizontal) sign = placed[3];
+      else if (win_low_horizontal) sign = placed[6];
+      else if (win_left_vertical) sign = placed[0];
+      else if (win_mid_vertical) sign = placed[1];
+      else if (win_right_vertical) sign = placed[2];
+      else if (win_main_diagonal) sign = placed[0];
+      else if (win_anti_diagonal) sign = placed[2];
+      else sign = 1'b0;
+      
+      check_for_win = {sign, any_win};
     end
     endfunction
 
