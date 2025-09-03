@@ -112,4 +112,43 @@ text
 Time Spent: 2.5 Hours
 
 # Day 6
-I began work on ReRender Pro Enterprise (aka not being dumb). Instead of creating a unique glyph for every
+I began work on ReRender Pro Enterprise (aka not being dumb). Instead of creating a unique glyph for every single piece of text on screen, which wastes LOTS of c
+ycles doing expensive division calculations, i instead repositioned existing glyphs dynamically, netting me a whole
+**drumroll please**
+1 FPS MORE!
+(7-8)
+we've gone from unplayable to slightly less unplayable.
+However, in doing so i noticed a huge optimisation vector -- the selection glyph.
+
+i fixed the always placing a gplyh even when not required, giving me a whole extra frame! Except for one teensy issue. i shoudl've been getting
+far more than one frame of improvement. A bit of research later, and it turns out verilog synthesizes both sides of a ternary equation, giving me 
+far less performance.
+```
+wire sel_glyph_on;
+assign sel_glyph_on = (|selected) ? glyph_active(
+    GRID_ORIGIN_X + (sel_index % 3) * CELL_SPACING - 20,
+    GRID_ORIGIN_Y + (sel_index / 3) * CELL_SPACING_Y - 20,
+    Sel, 15
+) : 1'b0;
+assign sel_active = {9{sel_glyph_on}} & selected;
+```
+I hence rewrote it to use purely combinational logic, giving me THREE whole frames now (12 fps).
+Then i finished off the win cases (all 5!! + accompanying logic) and begun work on the TIE case
+which took me way too long due to using !dynamic ReRender Pro! systems. Oh and it broke the cross wins text kinda but it looks cooler
+so we'll just call it a feature
+I then redid the color palette to be more intheme (it's still horrible tho)
+![img_7.png](img_7.png)
+![img_8.png](img_8.png)
+![img_9.png](img_9.png)
+Time Spent - 3 Hours
+
+Game Finished
+======
+Total Time Spent: 13 Hours
+
+think like an FPGA caveman™ : Maybe
+
+Get Something Working; Yes!
+
+Time Wasted Doing This in Verilog: 12 Hours
+
