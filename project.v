@@ -198,7 +198,7 @@ localparam [7:0] Colon[0:7] = '{
     8'b00000000   
 };
 
-  localparam [7:0] Circle[0:7] = '{
+  parameter [7:0] Circle[0:7] = '{
       8'b01111110,
       8'b11000011,
       8'b10000001,
@@ -231,7 +231,7 @@ localparam [7:0] Colon[0:7] = '{
       8'b11111111
   };
   
-  reg  [8:0] state = 9'b0000000000;
+  reg  [8:0] state = 9'b0000000111;
   reg  [8:0] placed = 9'b000000000;
   reg [8:0] selected = 9'b00000001; 
   wire [8:0] sel_active;
@@ -272,13 +272,13 @@ wire circle_wins_i2 = glyph_active(circle_win_x + 8*30, circle_win_y, I, 3);
 wire circle_wins_n = glyph_active(circle_win_x + 9*30, circle_win_y, N, 3);
 wire circle_wins_s = glyph_active(circle_win_x + 10*30, circle_win_y, S, 3);
 wire circle_wins_excl = glyph_active(circle_win_x + 11*30, circle_win_y, Exclamation, 3);
-
+reg [5:0] turn_color = 6'b111111;
 wire [10:0] Circle_spelling = {circle_wins_excl, circle_wins_s, circle_wins_n, circle_wins_i2, circle_wins_w, 
                               circle_wins_e, circle_wins_l, circle_wins_c2, circle_wins_r, circle_wins_i1, circle_wins_c};
 
 
-parameter cross_win_x = 200;
-parameter cross_win_y = 2000;
+reg [7:0] cross_win_x = 8'd160;
+parameter cross_win_y = 220;
 
 wire cross_wins_c = glyph_active(cross_win_x + 0*30, cross_win_y, C, 3);
 wire cross_wins_r = glyph_active(cross_win_x + 1*30, cross_win_y, R_letter, 3);
@@ -287,14 +287,14 @@ wire cross_wins_s1 = glyph_active(cross_win_x + 3*30, cross_win_y, S, 3);
 wire cross_wins_s2 = glyph_active(cross_win_x + 4*30, cross_win_y, S, 3);
 wire cross_wins_w = glyph_active(cross_win_x + 6*30, cross_win_y, W, 3);
 wire cross_wins_i = glyph_active(cross_win_x + 7*30, cross_win_y, I, 3);
-wire cross_wins_n = glyph_active(cross_win_x + 8*30, cross_win_y, N, 3);
+
 wire cross_wins_s3 = glyph_active(cross_win_x + 9*30, cross_win_y, S, 3);
 wire cross_wins_excl = glyph_active(cross_win_x + 10*30, cross_win_y, Exclamation, 3);
-
-wire [10:0] Cross_spelling = {cross_wins_excl, cross_wins_s3, cross_wins_n, cross_wins_i, cross_wins_w,
+wire [10:0] Cross_spelling = {cross_wins_excl, circle_wins_n , circle_wins_i1, circle_wins_w,
                              cross_wins_s2, cross_wins_s1, cross_wins_o, cross_wins_r, cross_wins_c};
-
-  assign turn_n = glyph_active(120, 455, N, 3);
+  reg [9:0] n_x = 10'd120;
+  reg [9:0] n_y = 10'd455;
+  assign turn_n = glyph_active(n_x, n_y, N, 3);
   assign turn_colon = glyph_active(150, 455, Colon, 3);
   assign current_item = glyph_active(180, 455, turn ? Circle : Cross, 3);
   wire [8:0] cell_active;
@@ -394,11 +394,9 @@ always @(posedge clk) begin
         end
       
       
-     if (turn_t || turn_u || turn_r || turn_n || turn_colon || current_item) begin
-      {R, G, B} <= 6'b111111;
-    end
-
+     
       if (btn_pressed[9]) begin //Select
+      
         if (!state[sel_index]) begin
           state[sel_index] <= 1'b1;
           placed[sel_index] <= turn ? 1'b1 : 1'b0;
@@ -406,21 +404,27 @@ always @(posedge clk) begin
         end
       end
     if (win[0]) begin
+        {R,G,B} <= 6'b0;
+        turn_color <= 6'b001100;
+        n_y <= 220; //it's a rendering priority issue
+        n_x <= 400;
+        
     if (win[1]) begin
-      
       if (|Circle_spelling) begin
       G <= 6'b111111;
       end
-      
     end else begin
-    {R, G, B} <= 6'b0000000;
-        if (|Cross_spelling) begin
+       
+      if (|Cross_spelling) begin
+       
         G <= 6'b111111;
       end
     end
-    end else if (state == {9{1'b1}}) begin
-      {R, G, B} <= 6'b0000000; 
-      end
+    if (turn_t || turn_u || turn_r || turn_n || turn_colon || current_item) begin
+      {R, G, B} <= turn_color;
+    end
+
+    end 
 
 last_btn <= btn_in;
   end
@@ -443,6 +447,8 @@ function [1:0] check_for_win;
     input [8:0] state;
     begin
        reg win_top_horizontal = 1'b0;
+       reg win_mid_horizontal = 1'b0;
+       reg win_low_horizontal = 1'b0;
        reg sign = 1'b0;
       
       
@@ -450,8 +456,15 @@ function [1:0] check_for_win;
         win_top_horizontal = (placed[0] == placed[1]) && (placed[0] == placed[2]);
         sign = win_top_horizontal ? placed[0]: 1'b0;
       end
-
-      check_for_win = {sign,win_top_horizontal};
+      if (state[3] && state[4] && state[5]) begin
+      win_mid_horizontal = (placed[3] == placed[4]) && (placed[4] == placed[5]);
+      sign = win_mid_horizontal ? placed[3] : 1'b0;
+      end
+      if (state[6] && state[7] && state[8]) begin
+      win_mid_horizontal = (placed[6] == placed[7]) && (placed[7] == placed[8]);
+      sign = win_low_horizontal ? placed[6] : 1'b0;
+      end
+      check_for_win = {sign,win_top_horizontal | win_mid_horizontal | win_low_horizontal};
     end
     endfunction
 
