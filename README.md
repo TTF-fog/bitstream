@@ -62,3 +62,54 @@ Time Spent :- 1.5 Hour
 well good news. it works. bad news. it barely works. I setup two keybinds in order to both change position and 
 update the current if empty and dependant on turn. The problem came when i found out only !TWO! keybinds were registering.
 caveman no understand :(. i debugged for an half hour and wasn't able to get any progress on the button issue. I also got text rendering going on the bottom bar    
+
+# Day 4
+well contrary to all expectations, and leaving me still confused, the generation of the buttons was **NOT**
+according to the btn_in array or even anything close.
+```Haskell
+generate
+  for (c = 0; c < 11; c = c+1) begin : BUTTON_POPULATE
+    assign btn_pressed[c] = btn_in[c] & ~last_btn[c];
+  end
+endgenerate
+
+```
+
+Instead i spent half an hour manually testing each button. (kindly point me to the person who decided
+inputs should only be registered when the gamepad tab is open), and created my own mapping of number to button
+(10 is still unknown tho). After that, i wrote a quick function to find the HIGH in selected, to check the current square
+```eleventy
+function [3:0] high_index;
+    input [8:0] select;
+    begin
+      integer i;
+      high_index = -1;
+      for (i = 0; i < 9; i = i +1) begin
+        if (select[i]) begin
+          high_index = i;
+        end
+    end
+    end
+    endfunction
+```
+I then setup proper block placing, and a reset button. This removed the need to manually edit the array for adding new stuff.
+To finish off the user-side, i populated all four arrow keys and spent a bit of time in making combinational logic to scroll around
+
+time spent: 2.5 Hours
+![img_4.png](img_4.png)
+
+# Day 5 (I kinda lost track)
+Since most things were done, i begun work on the actual win detection of it. It took me quite a bit of time due to one dumb mistake i was making
+
+```floobits
+ a == b == c
+```
+this was wrong, as it first compared a to b, and then compared the result to c. It took my small brain some time to fix this, despite realising the error
+fairly quickly (i even wrote it down in a comment). I then made a quick circle and cross win screen, which was ridiculously unoptimized.
+Then i tried to optimise it, and  proceeded to completely break it :(. After that i made a few more small fixes to rendering, such as fixing offscreen 
+text
+![img_5.png](img_5.png)
+Time Spent: 2.5 Hours
+
+# Day 6
+I began work on ReRender Pro Enterprise (aka not being dumb). Instead of creating a unique glyph for every
